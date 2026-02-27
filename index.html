@@ -50,7 +50,7 @@
             transition: background 0.3s, color 0.3s;
         }
 
-        /* Dynamic mode classes (applied to mode-indicator and timer circle) */
+        /* Dynamic mode classes */
         .mode-focus .mode-indicator {
             background: #fee2e2;
             color: #991b1b;
@@ -112,3 +112,239 @@
             border: 1px solid #dae2ed;
             transition: 0.1s;
             display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: #0f172a;
+            color: white;
+            border: none;
+            box-shadow: 0 8px 18px -6px #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #1e293b;
+            transform: scale(1.02);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .mode-toggle {
+            margin-top: 15px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 2px solid #cbd5e1;
+            padding: 10px 25px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .mode-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        .footer-note {
+            margin-top: 35px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-card" id="timerApp">
+        <h1>🍅 Focus Timer</h1>
+        <div class="mode-indicator" id="modeIndicator">Focus mode</div>
+
+        <div class="timer-circle">
+            <div class="time-display" id="timeDisplay">25:00</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startPauseBtn">▶ Start</button>
+            <button class="btn btn-secondary" id="resetBtn">↺ Reset</button>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="focusModeBtn">📚 Focus</button>
+            <button class="mode-btn" id="breakModeBtn">☕ Break</button>
+        </div>
+
+        <div class="footer-note">Pomodoro: 25 min focus · 5 min break</div>
+    </div>
+
+    <script>
+        (function() {
+            // Timer settings
+            const FOCUS_TIME = 25 * 60; // 25 minutes in seconds
+            const BREAK_TIME = 5 * 60;   // 5 minutes in seconds
+
+            // DOM elements
+            const timerApp = document.getElementById('timerApp');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const startPauseBtn = document.getElementById('startPauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const focusModeBtn = document.getElementById('focusModeBtn');
+            const breakModeBtn = document.getElementById('breakModeBtn');
+
+            // State
+            let isFocusMode = true;
+            let timeLeft = FOCUS_TIME;
+            let isRunning = false;
+            let timerInterval = null;
+
+            // Update display based on timeLeft (in seconds)
+            function updateDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            // Update UI based on mode (focus/break)
+            function updateModeUI() {
+                if (isFocusMode) {
+                    timerApp.classList.remove('mode-break');
+                    timerApp.classList.add('mode-focus');
+                    modeIndicator.textContent = 'Focus mode';
+                    focusModeBtn.classList.add('active');
+                    breakModeBtn.classList.remove('active');
+                } else {
+                    timerApp.classList.remove('mode-focus');
+                    timerApp.classList.add('mode-break');
+                    modeIndicator.textContent = 'Break mode';
+                    focusModeBtn.classList.remove('active');
+                    breakModeBtn.classList.add('active');
+                }
+            }
+
+            // Reset timer to full time of current mode
+            function resetTimer() {
+                timeLeft = isFocusMode ? FOCUS_TIME : BREAK_TIME;
+                updateDisplay();
+            }
+
+            // Switch between focus and break
+            function setMode(focus) {
+                isFocusMode = focus;
+                updateModeUI();
+                resetTimer();
+            }
+
+            // Timer complete: switch modes and show alert
+            function handleTimerComplete() {
+                // Play a simple beep using Web Audio API
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                } catch (e) {
+                    // Fallback alert if audio fails
+                    alert('Timer complete!');
+                }
+
+                // Switch modes
+                isFocusMode = !isFocusMode;
+                updateModeUI();
+                resetTimer();
+                
+                // If it was running, keep running with new mode
+                if (isRunning) {
+                    startTimer();
+                }
+            }
+
+            // Start the countdown
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        // Time's up
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        isRunning = false;
+                        startPauseBtn.textContent = '▶ Start';
+                        handleTimerComplete();
+                    }
+                }, 1000);
+            }
+
+            // Pause the countdown
+            function pauseTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+
+            // Event listeners
+            startPauseBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    pauseTimer();
+                    startPauseBtn.textContent = '▶ Start';
+                } else {
+                    startTimer();
+                    startPauseBtn.textContent = '⏸ Pause';
+                }
+                isRunning = !isRunning;
+            });
+
+            resetBtn.addEventListener('click', () => {
+                pauseTimer();
+                isRunning = false;
+                startPauseBtn.textContent = '▶ Start';
+                resetTimer();
+            });
+
+            focusModeBtn.addEventListener('click', () => {
+                if (!isFocusMode) {
+                    pauseTimer();
+                    isRunning = false;
+                    startPauseBtn.textContent = '▶ Start';
+                    setMode(true);
+                }
+            });
+
+            breakModeBtn.addEventListener('click', () => {
+                if (isFocusMode) {
+                    pauseTimer();
+                    isRunning = false;
+                    startPauseBtn.textContent = '▶ Start';
+                    setMode(false);
+                }
+            });
+
+            // Initialize
+            updateModeUI();
+            updateDisplay();
+        })();
+    </script>
+</body>
+</html>
