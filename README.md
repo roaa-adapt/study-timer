@@ -11,3 +11,4 @@ changed reset to restart
 
 made timer 30 minutes
 
+const FOCUS_TIME = 30 * 60; // 30 minutes in seconds
