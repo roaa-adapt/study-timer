@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍅 Pomodoro Study Timer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: cyan;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .timer-card {
+            background: white;
+            max-width: 600px;
+            width: 100%;
+            border-radius: 70px;
+            padding: 50px 30px 45px;
+            box-shadow: 0 30px 50px -15px #1e293b80;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1e2b3a;
+            margin-bottom: 5px;
+        }
+
+        .mode-indicator {
+            display: inline-block;
+            padding: 8px 28px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 30px;
+            background: #e6ebf2;
+            color: #1e293b;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Dynamic mode classes */
+        .mode-focus .mode-indicator {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .mode-break .mode-indicator {
+            background: #dcfce7;
+            color: #14532d;
+        }
+
+        .timer-circle {
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 30px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 20px #cbd5e1, 0 20px 30px -10px #94a3b8;
+            transition: background 0.4s, box-shadow 0.3s;
+            border: 6px solid white;
+        }
+
+        .mode-focus .timer-circle {
+            background: #fff1f0;
+            box-shadow: inset 0 0 15px #fecaca, 0 20px 30px -10px #f87171;
+        }
+
+        .mode-break .timer-circle {
+            background: #f0fdf4;
+            box-shadow: inset 0 0 15px #bbf7d0, 0 20px 30px -10px #4ade80;
+        }
+
+        .time-display {
+            font-size: 4.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0 20px;
+        }
+
+        .btn {
+            border: none;
+            background: violet;
+            padding: 15px 32px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #dae2ed;
+            transition: 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: #0f172a;
+            color: white;
+            border: none;
+            box-shadow: 0 8px 18px -6px #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: #1e293b;
+            transform: scale(1.02);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
+        .mode-toggle {
+            margin-top: 15px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            background: transparent;
+            border: 2px solid #cbd5e1;
+            padding: 10px 25px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .mode-btn.active {
+            background: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        /* NEW: Statistics panel styles */
+        .stats-panel {
+            background: #f8fafc;
+            border-radius: 40px;
+            padding: 20px 25px;
+            margin: 25px 0 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 2px solid #e2e8f0;
+        }
+
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .milestone-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .reset-stats-btn {
+            background: none;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .reset-stats-btn:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        /* NEW: Mode-specific statistics colors */
+        .mode-focus .stats-panel {
+            background: #fff5f5;
+            border-color: #fecaca;
+        }
+
+        .mode-break .stats-panel {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        /* NEW: Achievement animation */
+        @keyframes celebration {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .celebration {
+            animation: celebration 0.5s ease-in-out;
+        }
+
+        .stat-item.highlight {
+            color: #059669;
+        }
+
+        .footer-note {
+            margin-top: 35px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-card" id="timerApp">
+        <h1>🍅 Focus Timer</h1>
+        <div class="mode-indicator" id="modeIndicator">Focus mode</div>
+
+        <!-- NEW: Statistics Panel -->
+        <div class="stats-panel" id="statsPanel">
+            <div class="stat-item">
+                <div class="stat-value" id="sessionsCompleted">0</div>
+                <div class="stat-label">Sessions</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalFocusTime">0</div>
+                <div class="stat-label">Focus Hrs</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="currentStreak">0</div>
+                <div class="stat-label">Streak</div>
+            </div>
+            <button class="reset-stats-btn" id="resetStatsBtn" title="Reset statistics">↺</button>
+        </div>
+
+        <div class="timer-circle">
+            <div class="time-display" id="timeDisplay">25:00</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startPauseBtn">▶ Start</button>
+            <button class="btn btn-secondary" id="resetBtn">↺ restart</button>
+        </div>
+
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="focusModeBtn">📚 Focus</button>
+            <button class="mode-btn" id="breakModeBtn">☕ Break</button>
+        </div>
+
+        <!-- NEW: Milestone Container -->
+        <div id="milestoneContainer" style="margin-top: 15px;"></div>
+
+        <div class="footer-note">Pomodoro: 25 min focus · 5 min break</div>
+    </div>
+
+    <script>
+        (function() {
+            // Timer settings
+            const FOCUS_TIME = 25 * 60; // 25 minutes in seconds
+            const BREAK_TIME = 5 * 60;   // 5 minutes in seconds
+
+            // DOM elements
+            const timerApp = document.getElementById('timerApp');
+            const modeIndicator = document.getElementById('modeIndicator');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const startPauseBtn = document.getElementById('startPauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const focusModeBtn = document.getElementById('focusModeBtn');
+            const breakModeBtn = document.getElementById('breakModeBtn');
+
+            // NEW: Get statistics DOM elements
+            const statsPanel = document.getElementById('statsPanel');
+            const sessionsCompletedSpan = document.getElementById('sessionsCompleted');
+            const totalFocusTimeSpan = document.getElementById('totalFocusTime');
+            const currentStreakSpan = document.getElementById('currentStreak');
+            const resetStatsBtn = document.getElementById('resetStatsBtn');
+            const milestoneContainer = document.getElementById('milestoneContainer');
+
+            // State
+            let isFocusMode = true;
+            let timeLeft = FOCUS_TIME;
+            let isRunning = false;
+            let timerInterval = null;
+
+            // ===========================================
+            // NEW FEATURE: Session Counter & Statistics
+            // ===========================================
+
+            // Statistics state
+            let statistics = {
+                sessions: 0,
+                totalFocusSeconds: 0,
+                streak: 0,
+                lastSessionDate: null,
+                milestones: {
+                    1: { reached: false, message: "🎉 First focus session!" },
+                    5: { reached: false, message: "🔥 5 sessions - You're on fire!" },
+                    10: { reached: false, message: "⭐ 10 sessions - Focus master!" },
+                    25: { reached: false, message: "🏆 25 sessions - Unstoppable!" },
+                    50: { reached: false, message: "💫 50 sessions - Legendary focus!" },
+                    100: { reached: false, message: "👑 100 sessions - Pomodoro King!" }
+                }
+            };
+
+            // Load statistics from localStorage
+            function loadStatistics() {
+                const saved = localStorage.getItem('pomodoroStats');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        statistics = { ...statistics, ...parsed };
+                    } catch (e) {
+                        console.error('Failed to load statistics');
+                    }
+                }
+                updateStatisticsDisplay();
+            }
+
+            // Save statistics to localStorage
+            function saveStatistics() {
+                localStorage.setItem('pomodoroStats', JSON.stringify(statistics));
+            }
+
+            // Update statistics display
+            function updateStatisticsDisplay() {
+                sessionsCompletedSpan.textContent = statistics.sessions;
+                
+                // Convert seconds to hours (rounded to 1 decimal)
+                const hours = (statistics.totalFocusSeconds / 3600).toFixed(1);
+                totalFocusTimeSpan.textContent = hours;
+                
+                currentStreakSpan.textContent = statistics.streak;
+                
+                // Check and display milestones
+                checkMilestones();
+            }
+
+            // Check and display milestones
+            function checkMilestones() {
+                const sessionCount = statistics.sessions;
+                let reachedMilestone = null;
+                
+                // Check each milestone
+                Object.keys(statistics.milestones).forEach(milestone => {
+                    const count = parseInt(milestone);
+                    if (sessionCount >= count && !statistics.milestones[milestone].reached) {
+                        statistics.milestones[milestone].reached = true;
+                        reachedMilestone = statistics.milestones[milestone].message;
+                        saveStatistics();
+                    }
+                });
+                
+                // Display milestone if reached
+                if (reachedMilestone) {
+                    displayMilestone(reachedMilestone);
+                }
+                
+                // Show next milestone
+                showNextMilestone();
+            }
+
+            // Display achievement milestone
+            function displayMilestone(message) {
+                const badge = document.createElement('div');
+                badge.className = 'milestone-badge celebration';
+                badge.innerHTML = `${message} ✨`;
+                
+                milestoneContainer.innerHTML = '';
+                milestoneContainer.appendChild(badge);
+                
+                // Add celebration effect to stats
+                statsPanel.classList.add('celebration');
+                setTimeout(() => {
+                    statsPanel.classList.remove('celebration');
+                }, 500);
+                
+                // Remove badge after 5 seconds
+                setTimeout(() => {
+                    if (badge.parentNode) {
+                        badge.remove();
+                    }
+                }, 5000);
+            }
+
+            // Show next milestone
+            function showNextMilestone() {
+                const sessionCount = statistics.sessions;
+                let nextMilestone = null;
+                
+                // Find next unreached milestone
+                const milestones = Object.keys(statistics.milestones)
+                    .map(Number)
+                    .sort((a, b) => a - b);
+                
+                for (const milestone of milestones) {
+                    if (sessionCount < milestone && !statistics.milestones[milestone].reached) {
+                        nextMilestone = milestone;
+                        break;
+                    }
+                }
+                
+                if (nextMilestone) {
+                    const remaining = nextMilestone - sessionCount;
+                    const nextMessage = document.createElement('div');
+                    nextMessage.style.fontSize = '0.8rem';
+                    nextMessage.style.color = '#94a3b8';
+                    nextMessage.style.marginTop = '5px';
+                    nextMessage.textContent = `${remaining} more session${remaining > 1 ? 's' : ''} to next milestone 🎯`;
+                    
+                    // Only show if no current milestone badge
+                    if (milestoneContainer.children.length === 0) {
+                        milestoneContainer.innerHTML = '';
+                        milestoneContainer.appendChild(nextMessage);
+                    }
+                }
+            }
+
+            // Record completed session
+            function recordSession() {
+                // Increment session count
+                statistics.sessions++;
+                
+                // Add focus time (25 minutes in seconds)
+                statistics.totalFocusSeconds += 25 * 60;
+                
+                // Update streak
+                const today = new Date().toDateString();
+                
+                if (statistics.lastSessionDate === today) {
+                    // Already recorded a session today, streak stays same
+                } else if (statistics.lastSessionDate) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setHours(0, 0, 0, 0);
+                    
+                    const lastDate = new Date(statistics.lastSessionDate);
+                    
+                    if (lastDate.toDateString() === yesterday.toDateString()) {
+                        // Consecutive day
+                        statistics.streak++;
+                    } else {
+                        // Streak broken
+                        statistics.streak = 1;
+                    }
+                } else {
+                    // First session ever
+                    statistics.streak = 1;
+                }
+                
+                statistics.lastSessionDate = today;
+                
+                // Save and update display
+                saveStatistics();
+                updateStatisticsDisplay();
+            }
+
+            // Reset statistics
+            function resetStatistics() {
+                if (confirm('Are you sure you want to reset all statistics?')) {
+                    statistics = {
+                        sessions: 0,
+                        totalFocusSeconds: 0,
+                        streak: 0,
+                        lastSessionDate: null,
+                        milestones: {
+                            1: { reached: false, message: "🎉 First focus session!" },
+                            5: { reached: false, message: "🔥 5 sessions - You're on fire!" },
+                            10: { reached: false, message: "⭐ 10 sessions - Focus master!" },
+                            25: { reached: false, message: "🏆 25 sessions - Unstoppable!" },
+                            50: { reached: false, message: "💫 50 sessions - Legendary focus!" },
+                            100: { reached: false, message: "👑 100 sessions - Pomodoro King!" }
+                        }
+                    };
+                    localStorage.removeItem('pomodoroStats');
+                    updateStatisticsDisplay();
+                    milestoneContainer.innerHTML = '';
+                }
+            }
+
+            // Add reset stats button listener
+            resetStatsBtn.addEventListener('click', resetStatistics);
+
+            // Initialize statistics
+            loadStatistics();
+
+            // Add tooltip to reset button
+            resetStatsBtn.title = 'Reset statistics';
+
+            // Update display based on timeLeft (in seconds)
+            function updateDisplay() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            // Update UI based on mode (focus/break)
+            function updateModeUI() {
+                if (isFocusMode) {
+                    timerApp.classList.remove('mode-break');
+                    timerApp.classList.add('mode-focus');
+                    modeIndicator.textContent = 'Focus mode';
+                    focusModeBtn.classList.add('active');
+                    breakModeBtn.classList.remove('active');
+                } else {
+                    timerApp.classList.remove('mode-focus');
+                    timerApp.classList.add('mode-break');
+                    modeIndicator.textContent = 'Break mode';
+                    focusModeBtn.classList.remove('active');
+                    breakModeBtn.classList.add('active');
+                }
+            }
+
+            // Reset timer to full time of current mode
+            function resetTimer() {
+                timeLeft = isFocusMode ? FOCUS_TIME : BREAK_TIME;
+                updateDisplay();
+            }
+
+            // Switch between focus and break
+            function setMode(focus) {
+                isFocusMode = focus;
+                updateModeUI();
+                resetTimer();
+            }
+
+            // Timer complete: switch modes and show alert
+            function handleTimerComplete() {
+                // Play a simple beep using Web Audio API
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.3);
+                } catch (e) {
+                    // Fallback alert if audio fails
+                    alert('Timer complete!');
+                }
+
+                // Record session if it was a focus mode completion
+                if (isFocusMode) {
+                    recordSession();
+                }
+
+                // Switch modes
+                isFocusMode = !isFocusMode;
+                updateModeUI();
+                resetTimer();
+                
+                // If it was running, keep running with new mode
+                if (isRunning) {
+                    startTimer();
+                }
+            }
+
+            // Start the countdown
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                
+                timerInterval = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        // Time's up
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        isRunning = false;
+                        startPauseBtn.textContent = '▶ Start';
+                        handleTimerComplete();
+                    }
+                }, 1000);
+            }
+
+            // Pause the countdown
+            function pauseTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+
+            // Event listeners
+            startPauseBtn.addEventListener('click', () => {
+                if (isRunning) {
+                    pauseTimer();
+                    startPauseBtn.textContent = '▶ Start';
+                } else {
+                    startTimer();
+                    startPauseBtn.textContent = '⏸ Pause';
+                }
+                isRunning = !isRunning;
+            });
+
+            resetBtn.addEventListener('click', () => {
+                pauseTimer();
+                isRunning = false;
+                startPauseBtn.textContent = '▶ Start';
+                resetTimer();
+            });
+
+            focusModeBtn.addEventListener('click', () => {
+                if (!isFocusMode) {
+                    pauseTimer();
+                    isRunning = false;
+                    startPauseBtn.textContent = '▶ Start';
+                    setMode(true);
+                }
+            });
+
+            breakModeBtn.addEventListener('click', () => {
+                if (isFocusMode) {
+                    pauseTimer();
+                    isRunning = false;
+                    startPauseBtn.textContent = '▶ Start';
+                    setMode(false);
+                }
+            });
+
+            // Initialize
+            updateModeUI();
+            updateDisplay();
+        })();
+    </script>
+</body>
+</html>
